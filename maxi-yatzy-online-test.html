@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maxi Yatzy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --felt-dark:#0b2b1e;
+    --felt:#14503a;
+    --felt-light:#1c6a4c;
+    --wood:#5c3a21;
+    --wood-dark:#38230f;
+    --wood-light:#7a4f2b;
+    --gold:#d4af37;
+    --gold-soft:#f0d78c;
+    --gold-deep:#a8791f;
+    --cream:#f6efe0;
+    --cream-dim:#ece0c6;
+    --ink:#2b2118;
+    --ink-soft:#5a4c3d;
+    --die-face:#faf7f0;
+    --die-pip:#20201e;
+    --red-pip:#a3241f;
+    --shadow-hard: rgba(0,0,0,.55);
+    --danger:#9c3b34;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    font-family:'Inter',sans-serif;
+    color:var(--cream);
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(255,255,255,.06), transparent 60%),
+      radial-gradient(ellipse at 50% 50%, var(--felt-light) 0%, var(--felt) 45%, var(--felt-dark) 100%);
+    background-attachment:fixed;
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .rail{
+    width:100%;
+    max-width:1180px;
+    border:10px solid var(--wood);
+    border-image: linear-gradient(160deg, var(--wood-light), var(--wood) 40%, var(--wood-dark)) 1;
+    border-radius:22px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5), inset 0 0 40px rgba(0,0,0,.4);
+    padding:22px 22px 30px;
+    background: rgba(0,0,0,.08);
+  }
+  header{
+    text-align:center;
+    margin-bottom:18px;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    font-size:clamp(28px,5vw,46px);
+    letter-spacing:.5px;
+    margin:0;
+    color:var(--gold-soft);
+    text-shadow:0 2px 0 rgba(0,0,0,.4), 0 0 30px rgba(212,175,55,.25);
+  }
+  header .tagline{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--cream-dim);
+    opacity:.75;
+    margin-top:4px;
+  }
+
+  /* ---------- Cards ---------- */
+  .card{
+    background: linear-gradient(180deg, var(--cream) 0%, var(--cream-dim) 100%);
+    color:var(--ink);
+    border-radius:14px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.4);
+    padding:22px;
+  }
+  .hidden{display:none !important;}
+
+  #highscore-panel{
+    margin-bottom:16px;
+    padding:14px 22px;
+  }
+  #highscore-panel summary{
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    font-size:17px;
+    cursor:pointer;
+    list-style:none;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  #highscore-panel summary::-webkit-details-marker{display:none;}
+  #highscore-panel summary::after{
+    content:'▾';
+    font-size:14px;
+    color:var(--gold-deep);
+    transition:transform .15s ease;
+  }
+  #highscore-panel[open] summary::after{transform:rotate(180deg);}
+  #highscore-panel .highscore-list{margin-top:10px;}
+  #admin-login-box{margin-top:12px; padding-top:10px; border-top:1px dashed #d9cba3;}
+  .admin-link{
+    font-size:12px;
+    padding:6px 10px;
+    color:var(--ink-soft);
+    border-color:#c9bb98;
+  }
+  #admin-login-form{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:10px;
+    align-items:center;
+  }
+  #admin-login-form input{
+    padding:8px 10px;
+    border:1px solid #c9bb98;
+    border-radius:6px;
+    font-size:13px;
+    font-family:'Inter',sans-serif;
+    background:#fffdf7;
+    flex:1;
+    min-width:120px;
+  }
+  .admin-small-btn{padding:8px 14px; font-size:13px;}
+  #admin-login-error{
+    width:100%;
+    font-size:12px;
+    color:#a3241f;
+  }
+  #admin-status{
+    margin-top:12px;
+    padding-top:10px;
+    border-top:1px dashed #d9cba3;
+    font-size:13px;
+    color:#2f6b3f;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+
+  /* ---------- Setup screen ---------- */
+  #setup-screen h2{
+    font-family:'Fraunces',serif;
+    margin-top:0;
+    font-size:22px;
+    border-bottom:2px dashed var(--gold-deep);
+    padding-bottom:10px;
+  }
+  .player-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .player-row .num{
+    font-family:'JetBrains Mono',monospace;
+    width:26px;
+    text-align:center;
+    color:var(--ink-soft);
+    font-weight:700;
+  }
+  .player-row input{
+    flex:1;
+    padding:10px 12px;
+    border:1px solid #c9bb98;
+    border-radius:8px;
+    font-size:15px;
+    font-family:'Inter',sans-serif;
+    background:#fffdf7;
+  }
+  .icon-btn{
+    width:34px;height:34px;
+    border-radius:50%;
+    border:none;
+    cursor:pointer;
+    font-size:18px;
+    font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    transition:transform .12s ease, filter .12s ease;
+  }
+  .icon-btn:active{transform:scale(.92);}
+  .icon-btn.add{background:linear-gradient(180deg,var(--gold-soft),var(--gold-deep));color:#2b2118;}
+  .icon-btn.remove{background:#e7d9d9;color:var(--danger);}
+  .icon-btn.remove:disabled{opacity:.35;cursor:not-allowed;}
+  .icon-btn:hover:not(:disabled){filter:brightness(1.08);}
+
+  #add-player-btn{
+    margin-top:6px;
+    background:none;
+    border:2px dashed var(--gold-deep);
+    color:var(--gold-deep);
+    border-radius:10px;
+    padding:10px 16px;
+    font-weight:600;
+    cursor:pointer;
+    width:100%;
+    font-size:14px;
+  }
+  #add-player-btn:hover{background:rgba(168,121,31,.08);}
+
+  .gold-btn{
+    background:linear-gradient(180deg,var(--gold-soft),var(--gold-deep));
+    color:#2b2118;
+    border:none;
+    padding:14px 28px;
+    border-radius:10px;
+    font-weight:700;
+    font-size:16px;
+    letter-spacing:.5px;
+    cursor:pointer;
+    box-shadow:0 6px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.6);
+    transition:transform .1s ease;
+  }
+  .gold-btn:active{transform:translateY(2px);}
+  .gold-btn:disabled{opacity:.4;cursor:not-allowed;}
+  .ghost-btn{
+    background:none;
+    border:1px solid rgba(246,239,224,.4);
+    color:var(--cream);
+    padding:10px 18px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:14px;
+    font-weight:600;
+  }
+  .ghost-btn:hover{background:rgba(246,239,224,.08);}
+
+  #setup-actions{margin-top:18px;display:flex;justify-content:flex-end;}
+
+  .mode-switch{ text-align:center; margin-top:16px; }
+  .mode-switch .ghost-btn{ color:var(--ink-soft); border-color:#c9bb98; font-size:13px; }
+
+  .online-block{
+    margin-bottom:18px;
+    padding-bottom:16px;
+    border-bottom:1px dashed #d9cba3;
+  }
+  .online-block:last-of-type{border-bottom:none;}
+  .online-block h3{ font-family:'Fraunces',serif; margin:0 0 10px; font-size:16px; }
+  .online-block input{
+    width:100%;
+    padding:10px 12px;
+    margin-bottom:8px;
+    border:1px solid #c9bb98;
+    border-radius:8px;
+    font-size:15px;
+    font-family:'Inter',sans-serif;
+    background:#fffdf7;
+  }
+  #online-error{ color:#a3241f; font-size:13px; margin:6px 0; min-height:16px; }
+  #on-back-btn{ margin-top:6px; width:100%; }
+
+  .room-code-box{
+    text-align:center;
+    margin-bottom:18px;
+  }
+  .room-code-label{
+    font-size:12px;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:2px;
+    margin-bottom:6px;
+  }
+  .room-code{
+    font-family:'JetBrains Mono',monospace;
+    font-size:40px;
+    font-weight:700;
+    letter-spacing:8px;
+    color:var(--gold-deep);
+    background:#fffdf7;
+    border:2px dashed var(--gold-deep);
+    border-radius:12px;
+    padding:14px 10px;
+  }
+  #on-lobby-players{
+    list-style:none;
+    padding:0;
+    margin:0 0 18px;
+  }
+  #on-lobby-players li{
+    padding:10px 14px;
+    margin-bottom:6px;
+    background:#fffdf7;
+    border:1px solid #d9cba3;
+    border-radius:8px;
+    font-weight:600;
+  }
+  #on-lobby-players li .host-tag{
+    font-size:11px;
+    color:var(--gold-deep);
+    font-weight:700;
+    margin-left:6px;
+  }
+  #on-start-online-btn, #on-leave-btn{ width:100%; margin-top:8px; }
+  #on-lobby-waiting{
+    text-align:center;
+    color:var(--cream-dim);
+    font-style:italic;
+    margin-top:10px;
+  }
+  #on-turn-status{
+    text-align:center;
+    font-weight:600;
+    color:var(--gold-soft);
+    margin-bottom:4px;
+  }
+
+  /* ---------- Game screen ---------- */
+  #game-screen{display:flex; flex-direction:column; gap:16px;}
+
+  .turn-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    background:rgba(0,0,0,.22);
+    border-radius:12px;
+    padding:12px 18px;
+    border:1px solid rgba(212,175,55,.25);
+  }
+  .current-player{
+    display:flex;align-items:center;gap:10px;
+  }
+  .current-player .badge{
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    font-size:20px;
+    color:var(--ink);
+    background:linear-gradient(180deg,var(--gold-soft),var(--gold-deep));
+    padding:6px 16px;
+    border-radius:20px;
+    box-shadow:0 4px 10px rgba(0,0,0,.3);
+  }
+  .pluppar{
+    display:flex; gap:4px; align-items:center;
+  }
+  .plupp{
+    width:11px;height:11px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, var(--gold-soft), var(--gold-deep));
+    box-shadow:0 1px 2px rgba(0,0,0,.5);
+  }
+  .rolls-info{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    color:var(--cream-dim);
+    text-align:right;
+  }
+  .rolls-info b{color:var(--gold-soft); font-size:15px;}
+
+  .dice-tray{
+    background: linear-gradient(180deg, var(--felt) 0%, var(--felt-dark) 100%);
+    border-radius:16px;
+    padding:26px 16px;
+    box-shadow:inset 0 0 30px rgba(0,0,0,.5), inset 0 0 0 6px var(--wood-dark);
+    display:flex;
+    justify-content:center;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .die{
+    width:64px;height:64px;
+    background: radial-gradient(circle at 30% 25%, #ffffff, var(--die-face) 55%, #ddd6c4 100%);
+    border-radius:14px;
+    box-shadow:
+      0 8px 14px var(--shadow-hard),
+      inset 0 -4px 6px rgba(0,0,0,.12),
+      inset 0 3px 3px rgba(255,255,255,.9);
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    grid-template-rows:repeat(3,1fr);
+    padding:9px;
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease;
+    position:relative;
+  }
+  .die:hover{transform:translateY(-2px);}
+  .die.unrolled{opacity:.45; cursor:default;}
+  .die.held{
+    box-shadow:
+      0 3px 6px var(--shadow-hard),
+      0 0 0 3px var(--gold-soft),
+      inset 0 -4px 6px rgba(0,0,0,.2),
+      inset 0 3px 3px rgba(255,255,255,.5);
+    transform:translateY(3px) scale(.96);
+    background: radial-gradient(circle at 30% 25%, #fff7dd, #f0e2b8 55%, #d8c489 100%);
+  }
+  .die.rolling{ animation: tumble .45s ease-in-out; }
+  @keyframes tumble{
+    0%{transform:rotate(0deg) scale(1);}
+    30%{transform:rotate(120deg) scale(1.12);}
+    60%{transform:rotate(250deg) scale(.92);}
+    100%{transform:rotate(360deg) scale(1);}
+  }
+  .pip{
+    width:11px;height:11px;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #55524a, var(--die-pip));
+    justify-self:center;
+    align-self:center;
+    box-shadow:inset 0 1px 1px rgba(255,255,255,.15);
+  }
+  .die.unrolled .pip{background:transparent;box-shadow:none;}
+  /* pip position grid areas by face */
+  .p1{grid-column:2;grid-row:2;}
+  .p2a{grid-column:1;grid-row:1;} .p2b{grid-column:3;grid-row:3;}
+  .p3a{grid-column:1;grid-row:1;} .p3b{grid-column:2;grid-row:2;} .p3c{grid-column:3;grid-row:3;}
+  .p4a{grid-column:1;grid-row:1;} .p4b{grid-column:3;grid-row:1;} .p4c{grid-column:1;grid-row:3;} .p4d{grid-column:3;grid-row:3;}
+  .p5a{grid-column:1;grid-row:1;} .p5b{grid-column:3;grid-row:1;} .p5c{grid-column:2;grid-row:2;} .p5d{grid-column:1;grid-row:3;} .p5e{grid-column:3;grid-row:3;}
+  .p6a{grid-column:1;grid-row:1;} .p6b{grid-column:3;grid-row:1;} .p6c{grid-column:1;grid-row:2;} .p6d{grid-column:3;grid-row:2;} .p6e{grid-column:1;grid-row:3;} .p6f{grid-column:3;grid-row:3;}
+
+  .roll-controls{
+    display:flex;
+    justify-content:center;
+    gap:14px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  #roll-btn{
+    font-family:'Fraunces',serif;
+    font-size:19px;
+    padding:16px 40px;
+    border-radius:50px;
+  }
+  #score-hint{
+    font-size:13px;
+    color:var(--cream-dim);
+    font-style:italic;
+  }
+
+  /* ---------- Scoresheet ---------- */
+  .sheet-wrap{
+    overflow-x:auto;
+    border-radius:14px;
+  }
+  table.sheet{
+    border-collapse:collapse;
+    width:100%;
+    min-width:420px;
+    background: linear-gradient(180deg, var(--cream) 0%, var(--cream-dim) 100%);
+    color:var(--ink);
+    font-size:14px;
+  }
+  table.sheet th, table.sheet td{
+    padding:8px 12px;
+    text-align:center;
+    border-bottom:1px solid #d9cba3;
+    white-space:nowrap;
+  }
+  table.sheet thead th{
+    font-family:'Fraunces',serif;
+    font-size:15px;
+    background:var(--wood-dark);
+    color:var(--gold-soft);
+    position:sticky; top:0;
+    border-bottom:2px solid var(--gold-deep);
+  }
+  table.sheet td.label, table.sheet th.label{
+    text-align:left;
+    font-weight:600;
+    position:sticky; left:0;
+    background:var(--cream-dim);
+    z-index:2;
+    border-right:2px solid var(--gold-deep);
+    width:1%;
+    white-space:nowrap;
+  }
+  table.sheet thead th.label{background:var(--wood-dark); z-index:3;}
+  tr.section-head td{
+    background:var(--gold-soft);
+    color:var(--ink);
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    letter-spacing:2px;
+    font-size:11px;
+    text-align:left !important;
+    position:static !important;
+  }
+  tr.bonus-row td{ background:#f2e3b0; font-weight:700; }
+  td.bonus-ontrack{ color:#2f6b3f; font-weight:700; }
+  td.bonus-behind{ color:#a3241f; font-weight:700; }
+  .row-badge{
+    display:inline-block;
+    margin-left:6px;
+    font-size:10px;
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    padding:1px 5px;
+    border-radius:8px;
+    vertical-align:middle;
+  }
+  .row-badge.bonus-ontrack{ color:#2f6b3f; background:rgba(60,140,80,.15); }
+  .row-badge.bonus-behind{ color:#a3241f; background:rgba(163,36,31,.12); }
+  tr.total-row td{ background:var(--gold-deep); color:#2b2118; font-weight:700; font-size:15px;}
+  td.score-cell{cursor:default; color:var(--ink-soft);}
+  td.score-cell.filled{color:var(--ink); font-weight:700;}
+  td.score-cell.filled.zero{color:#b0a58c; font-style:italic;}
+  td.score-cell.clickable{
+    cursor:pointer;
+    color:var(--gold-deep);
+    font-weight:700;
+    background:rgba(212,175,55,.14);
+    border-radius:6px;
+  }
+  td.score-cell.clickable:hover{background:rgba(212,175,55,.32);}
+  td.name-col{font-weight:700;}
+  td.name-col.active-player{color:var(--danger);}
+
+  /* ---------- End screen ---------- */
+  #end-screen h2{font-family:'Fraunces',serif;text-align:center;font-size:26px;}
+  .standings{list-style:none;padding:0;margin:0 0 22px;}
+  .standings li{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 14px;margin-bottom:8px;
+    background:#fffdf7;border:1px solid #d9cba3;border-radius:8px;
+    font-weight:600;
+  }
+  .standings li.first{background:linear-gradient(90deg,#fff7dd,#f3e0a0); border-color:var(--gold-deep);}
+  .standings .rank{font-family:'JetBrains Mono',monospace;color:var(--gold-deep);margin-right:10px;}
+  .standings .pts{font-family:'JetBrains Mono',monospace;}
+
+  .highscore-list{list-style:none;padding:0;margin:0;}
+  .highscore-list li{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:6px 10px;border-bottom:1px dashed #d9cba3;
+    font-size:14px;
+    gap:8px;
+  }
+  .highscore-list li span.hs-name{font-weight:600; flex:1;}
+  .highscore-list li span.hs-meta{color:var(--ink-soft); font-size:12px; white-space:nowrap;}
+  .highscore-list .hs-delete{
+    border:none;
+    background:none;
+    color:#b0a58c;
+    font-size:17px;
+    line-height:1;
+    cursor:pointer;
+    padding:2px 4px;
+    flex-shrink:0;
+  }
+  .highscore-list .hs-delete:hover{color:#7a2b24;}
+
+  .end-actions{display:flex; gap:12px; justify-content:center; margin-top:20px; flex-wrap:wrap;}
+
+  footer{
+    text-align:center;
+    margin-top:16px;
+    font-size:11px;
+    color:rgba(246,239,224,.5);
+    font-family:'JetBrains Mono',monospace;
+  }
+
+  @media (max-width:560px){
+    .die{width:48px;height:48px;padding:6px;}
+    .pip{width:8px;height:8px;}
+    #roll-btn{padding:14px 26px;font-size:16px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="rail">
+  <header>
+    <h1>🎲 Maxi Yatzy</h1>
+    <div class="tagline">Sex tärningar &middot; Tre kast &middot; Sparade kast med pluppar</div>
+  </header>
+
+  <details id="highscore-panel" class="card" open>
+    <summary>🏆 Highscore (topp 10)</summary>
+    <ul class="highscore-list" id="highscore-list-live"></ul>
+
+    <div id="admin-login-box">
+      <button id="admin-login-toggle" class="ghost-btn admin-link" type="button">Logga in som admin</button>
+      <div id="admin-login-form" class="hidden">
+        <input type="email" id="admin-email" placeholder="E-post" autocomplete="username">
+        <input type="password" id="admin-password" placeholder="Lösenord" autocomplete="current-password">
+        <button id="admin-login-btn" class="gold-btn admin-small-btn" type="button">Logga in</button>
+        <div id="admin-login-error"></div>
+      </div>
+    </div>
+    <div id="admin-status" class="hidden">
+      ✅ Inloggad som admin
+      <button id="admin-logout-btn" class="ghost-btn admin-small-btn" type="button">Logga ut</button>
+    </div>
+  </details>
+
+  <!-- ============ SETUP SCREEN ============ -->
+  <section id="setup-screen" class="card">
+    <h2>Vilka spelar?</h2>
+    <div id="player-list"></div>
+    <button id="add-player-btn" type="button">+ Lägg till spelare</button>
+    <div id="setup-actions">
+      <button id="start-game-btn" class="gold-btn" type="button">Starta spel</button>
+    </div>
+    <div class="mode-switch">
+      <button id="go-online-btn" class="ghost-btn" type="button">🌐 Spela online mot varandra istället</button>
+    </div>
+  </section>
+
+  <!-- ============ GAME SCREEN ============ -->
+  <section id="game-screen" class="hidden">
+    <div class="turn-bar">
+      <div class="current-player">
+        <span class="badge" id="current-player-name">-</span>
+        <div class="pluppar" id="current-player-pluppar" title="Sparade kast"></div>
+      </div>
+      <div class="rolls-info">
+        Kast denna omgång: <b id="rolls-used">0</b> / <span id="rolls-max">3</span>
+      </div>
+    </div>
+
+    <div class="dice-tray" id="dice-tray"></div>
+
+    <div class="roll-controls">
+      <button id="roll-btn" class="gold-btn" type="button">KASTA TÄRNINGAR</button>
+      <span id="score-hint">Kasta minst en gång, håll tärningar genom att klicka på dem</span>
+    </div>
+
+    <div class="sheet-wrap">
+      <table class="sheet" id="scoresheet"></table>
+    </div>
+  </section>
+
+  <!-- ============ END SCREEN ============ -->
+  <section id="end-screen" class="card hidden">
+    <h2>🏆 Spelet är slut!</h2>
+    <ul class="standings" id="standings-list"></ul>
+
+    <h2 style="font-size:20px;">All-time highscore</h2>
+    <ul class="highscore-list" id="highscore-list"></ul>
+
+    <div class="end-actions">
+      <button id="new-game-btn" class="gold-btn" type="button">Nytt spel</button>
+      <button id="clear-highscore-btn" class="ghost-btn hidden" type="button" style="color:#7a2b24;border-color:#7a2b24;">Rensa highscore</button>
+    </div>
+  </section>
+
+  <!-- ============ ONLINE: LANDING (skapa/gå med) ============ -->
+  <section id="online-landing" class="card hidden">
+    <h2>🌐 Spela online</h2>
+    <div class="online-block">
+      <h3>Skapa nytt rum</h3>
+      <input type="text" id="on-create-name" placeholder="Ditt namn" maxlength="20">
+      <button id="on-create-btn" class="gold-btn" type="button">Skapa rum</button>
+    </div>
+    <div class="online-block">
+      <h3>Gå med i rum</h3>
+      <input type="text" id="on-join-code" placeholder="Rumskod, t.ex. AB3D" maxlength="4" style="text-transform:uppercase;">
+      <input type="text" id="on-join-name" placeholder="Ditt namn" maxlength="20">
+      <button id="on-join-btn" class="gold-btn" type="button">Gå med</button>
+    </div>
+    <div id="online-error"></div>
+    <button id="on-back-btn" class="ghost-btn" type="button">← Tillbaka till lokalt spel</button>
+  </section>
+
+  <!-- ============ ONLINE: LOBBY (väntar på spelare) ============ -->
+  <section id="online-lobby" class="card hidden">
+    <h2>Väntar på spelare…</h2>
+    <div class="room-code-box">
+      <div class="room-code-label">Rumskod – dela med dina medspelare</div>
+      <div class="room-code" id="on-room-code">----</div>
+    </div>
+    <div id="on-lobby-players"></div>
+    <button id="on-start-online-btn" class="gold-btn hidden" type="button">Starta spel</button>
+    <div id="on-lobby-waiting" class="hidden">Väntar på att rumägaren startar spelet…</div>
+    <button id="on-leave-btn" class="ghost-btn" type="button">Lämna rummet</button>
+  </section>
+
+  <!-- ============ ONLINE: GAME SCREEN ============ -->
+  <section id="online-game-screen" class="hidden">
+    <div class="turn-bar">
+      <div class="current-player">
+        <span class="badge" id="on-current-player-name">-</span>
+        <div class="pluppar" id="on-current-player-pluppar" title="Sparade kast"></div>
+      </div>
+      <div class="rolls-info">
+        Kast denna omgång: <b id="on-rolls-used">0</b> / <span id="on-rolls-max">3</span>
+      </div>
+    </div>
+
+    <div id="on-turn-status"></div>
+
+    <div class="dice-tray" id="on-dice-tray"></div>
+
+    <div class="roll-controls">
+      <button id="on-roll-btn" class="gold-btn" type="button">KASTA TÄRNINGAR</button>
+      <span id="on-score-hint">Kasta minst en gång, håll tärningar genom att klicka på dem</span>
+    </div>
+
+    <div class="sheet-wrap">
+      <table class="sheet" id="on-scoresheet"></table>
+    </div>
+
+    <div class="mode-switch">
+      <button id="on-leave-game-btn" class="ghost-btn" type="button">Lämna rummet</button>
+    </div>
+  </section>
+
+  <!-- ============ ONLINE: END SCREEN ============ -->
+  <section id="online-end-screen" class="card hidden">
+    <h2>🏆 Spelet är slut!</h2>
+    <ul class="standings" id="on-standings-list"></ul>
+    <h2 style="font-size:20px;">All-time highscore</h2>
+    <ul class="highscore-list" id="on-highscore-list"></ul>
+    <div class="end-actions">
+      <button id="on-leave-end-btn" class="gold-btn" type="button">Lämna rummet</button>
+    </div>
+  </section>
+
+  <footer>Highscore och online-spel delas via Supabase &middot; publicerad via GitHub Pages</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ========================= SUPABASE ========================= */
+  // Fyll i era egna värden från Supabase (Project Settings -> API)
+  const SUPABASE_URL = 'https://raetqvrsyyxnqsgvqwqd.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJhZXRxdnJzeXl4bnFzZ3Zxd3FkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1NTk5MzYsImV4cCI6MjEwMDEzNTkzNn0.iZAJbOfJxdCNBdVxu4w0-LFu4SuTYVKr2wcA25R-c_Q';
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* ========================= CATEGORIES & SCORING ========================= */
+  function getCounts(dice){
+    const c=[0,0,0,0,0,0,0];
+    dice.forEach(d=>c[d]++);
+    return c;
+  }
+  function pairsList(counts){
+    // Endast SKILDA tärningsvärden räknas som ett par var (t.ex. fyra sexor
+    // ger bara ETT par sexor, inte "två par sexor").
+    const pairs=[];
+    for(let f=6; f>=1; f--){
+      if(counts[f]>=2) pairs.push(f);
+    }
+    return pairs;
+  }
+
+  const CATEGORIES = [
+    {id:'ones',   label:'Ettor',   section:'upper', score:(d,c)=>c[1]*1},
+    {id:'twos',   label:'Tvåor',   section:'upper', score:(d,c)=>c[2]*2},
+    {id:'threes', label:'Treor',   section:'upper', score:(d,c)=>c[3]*3},
+    {id:'fours',  label:'Fyror',   section:'upper', score:(d,c)=>c[4]*4},
+    {id:'fives',  label:'Femmor',  section:'upper', score:(d,c)=>c[5]*5},
+    {id:'sixes',  label:'Sexor',   section:'upper', score:(d,c)=>c[6]*6},
+
+    {id:'pair', label:'Par', section:'lower', score:(d,c)=>{
+      const p=pairsList(c); return p.length>=1 ? p[0]*2 : 0;
+    }},
+    {id:'twoPairs', label:'Två par', section:'lower', score:(d,c)=>{
+      const p=pairsList(c); return p.length>=2 ? (p[0]+p[1])*2 : 0;
+    }},
+    {id:'threePairs', label:'Tre par', section:'lower', score:(d,c)=>{
+      const p=pairsList(c); return p.length>=3 ? (p[0]+p[1]+p[2])*2 : 0;
+    }},
+    {id:'threeKind', label:'Triss', section:'lower', score:(d,c)=>{
+      for(let f=6; f>=1; f--) if(c[f]>=3) return f*3;
+      return 0;
+    }},
+    {id:'fourKind', label:'Fyrtal', section:'lower', score:(d,c)=>{
+      for(let f=6; f>=1; f--) if(c[f]>=4) return f*4;
+      return 0;
+    }},
+    {id:'fiveKind', label:'Femtal', section:'lower', score:(d,c)=>{
+      for(let f=6; f>=1; f--) if(c[f]>=5) return f*5;
+      return 0;
+    }},
+    {id:'house', label:'Kåk (3+2)', section:'lower', score:(d,c)=>{
+      let best=0;
+      for(let t=1;t<=6;t++){
+        if(c[t]>=3){
+          for(let p=1;p<=6;p++){
+            if(p!==t && c[p]>=2){
+              best=Math.max(best, 3*t+2*p);
+            }
+          }
+        }
+      }
+      return best;
+    }},
+    {id:'house2', label:'Hus (3+3)', section:'lower', score:(d,c)=>{
+      const triples=[];
+      for(let f=1;f<=6;f++) if(c[f]>=3) triples.push(f);
+      if(triples.length===2) return d.reduce((a,b)=>a+b,0);
+      return 0;
+    }},
+    {id:'tower', label:'Torn (2+4)', section:'lower', score:(d,c)=>{
+      let four=null;
+      for(let f=1;f<=6;f++) if(c[f]===4) four=f;
+      if(four===null) return 0;
+      let pairFace=null;
+      for(let g=1;g<=6;g++) if(g!==four && c[g]===2) pairFace=g;
+      if(pairFace===null) return 0;
+      return 4*four+2*pairFace;
+    }},
+    {id:'smallStraight', label:'Liten stege', section:'lower', score:(d)=>{
+      const s=new Set(d);
+      return [1,2,3,4,5].every(v=>s.has(v)) ? 15 : 0;
+    }},
+    {id:'largeStraight', label:'Stor stege', section:'lower', score:(d)=>{
+      const s=new Set(d);
+      return [2,3,4,5,6].every(v=>s.has(v)) ? 20 : 0;
+    }},
+    {id:'fullStraight', label:'Full stege', section:'lower', score:(d)=>{
+      const s=new Set(d);
+      return s.size===6 ? 21 : 0;
+    }},
+    {id:'chance', label:'Chans', section:'lower', score:(d)=>d.reduce((a,b)=>a+b,0)},
+    {id:'yatzy', label:'Yatzy', section:'lower', score:(d,c)=>{
+      for(let f=1;f<=6;f++) if(c[f]===6) return 100;
+      return 0;
+    }},
+  ];
+  const UPPER_IDS = CATEGORIES.filter(c=>c.section==='upper').map(c=>c.id);
+  const UPPER_FACE = {ones:1, twos:2, threes:3, fours:4, fives:5, sixes:6};
+  // Brytpunkt per rad för att nå bonus (84 totalt = 4 av varje värde)
+  function upperBonusTarget(id){ return 4 * UPPER_FACE[id]; }
+  const LOWER_IDS = CATEGORIES.filter(c=>c.section==='lower').map(c=>c.id);
+
+  function computeScore(catId, dice){
+    const counts = getCounts(dice);
+    const cat = CATEGORIES.find(c=>c.id===catId);
+    return cat.score(dice, counts);
+  }
+
+  /* ========================= STATE ========================= */
+  let players = []; // {name, scores:{catId:val|null}, bank:number}
+  let currentPlayerIndex = 0;
+  let dice = [1,1,1,1,1,1];
+  let held = [false,false,false,false,false,false];
+  let rollsUsedThisTurn = 0;
+  let hasRolledThisTurn = false;
+  let gameStarted = false;
+
+  /* ========================= SETUP SCREEN ========================= */
+  const playerListEl = document.getElementById('player-list');
+  let setupNames = ['']; // start with 1 player field
+
+  function renderSetup(){
+    playerListEl.innerHTML = '';
+    setupNames.forEach((name, i)=>{
+      const row = document.createElement('div');
+      row.className = 'player-row';
+      row.innerHTML = `
+        <span class="num">${i+1}.</span>
+        <input type="text" placeholder="Spelarnamn" value="${name.replace(/"/g,'&quot;')}" data-idx="${i}">
+        <button class="icon-btn remove" type="button" data-idx="${i}" ${setupNames.length<=1?'disabled':''} title="Ta bort">&times;</button>
+      `;
+      playerListEl.appendChild(row);
+    });
+    playerListEl.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('input', e=>{
+        setupNames[+e.target.dataset.idx] = e.target.value;
+      });
+    });
+    playerListEl.querySelectorAll('.icon-btn.remove').forEach(btn=>{
+      btn.addEventListener('click', e=>{
+        const idx = +e.currentTarget.dataset.idx;
+        if(setupNames.length>1){
+          setupNames.splice(idx,1);
+          renderSetup();
+        }
+      });
+    });
+  }
+
+  document.getElementById('add-player-btn').addEventListener('click', ()=>{
+    setupNames.push('');
+    renderSetup();
+  });
+
+  document.getElementById('start-game-btn').addEventListener('click', ()=>{
+    const finalNames = setupNames.map((n,i)=> n.trim() || ('Spelare ' + (i+1)) );
+    players = finalNames.map(name=>({
+      name,
+      scores: Object.fromEntries(CATEGORIES.map(c=>[c.id, null])),
+      bank: 0
+    }));
+    currentPlayerIndex = 0;
+    gameStarted = true;
+    startTurn();
+    document.getElementById('setup-screen').classList.add('hidden');
+    document.getElementById('game-screen').classList.remove('hidden');
+    document.getElementById('end-screen').classList.add('hidden');
+    renderGame();
+  });
+
+  renderSetup();
+
+  /* ========================= GAME SCREEN ========================= */
+  const diceTray = document.getElementById('dice-tray');
+  const rollBtn = document.getElementById('roll-btn');
+  const rollsUsedEl = document.getElementById('rolls-used');
+  const rollsMaxEl = document.getElementById('rolls-max');
+  const currentPlayerNameEl = document.getElementById('current-player-name');
+  const currentPlayerPluppar = document.getElementById('current-player-pluppar');
+  const scoreHint = document.getElementById('score-hint');
+
+  const FACE_PIPS = {
+    1: ['p1'],
+    2: ['p2a','p2b'],
+    3: ['p3a','p3b','p3c'],
+    4: ['p4a','p4b','p4c','p4d'],
+    5: ['p5a','p5b','p5c','p5d','p5e'],
+    6: ['p6a','p6b','p6c','p6d','p6e','p6f'],
+  };
+
+  function maxRollsThisTurn(){
+    return 3 + players[currentPlayerIndex].bank;
+  }
+
+  // 🥚 Hemlig funktion: spelare som heter "Alfed" (felstavat Alfred) kastar
+  // alltid perfekt, i denna ordning genom protokollet.
+  const ALFED_SEQUENCE = [
+    [6,6,6,6,6,6], // Yatzy
+    [1,1,1,1,1,1], // Ettor
+    [2,2,2,2,2,2], // Tvåor
+    [3,3,3,3,3,3], // Treor
+    [4,4,4,4,4,4], // Fyror
+    [5,5,5,5,5,5], // Femmor
+    [6,6,6,6,6,6], // Sexor
+    [6,6,5,4,3,2], // Par
+    [6,6,5,5,4,3], // Två par
+    [6,6,5,5,4,4], // Tre par
+    [6,6,6,5,4,3], // Triss
+    [6,6,6,6,5,4], // Fyrtal
+    [6,6,6,6,6,5], // Femtal
+    [6,6,6,5,5,4], // Kåk
+    [6,6,6,5,5,5], // Hus
+    [6,6,6,6,5,5], // Torn
+    [1,2,3,4,5,6], // Liten stege
+    [1,2,3,4,5,6], // Stor stege
+    [1,2,3,4,5,6], // Full stege
+    [6,6,6,6,6,6], // Chans
+  ];
+  function isAlfed(player){
+    return player.name.trim().toLowerCase() === 'alfed';
+  }
+  function alfedForcedDice(player){
+    const filledCount = CATEGORIES.filter(c=>player.scores[c.id]!==null).length;
+    const idx = Math.min(filledCount, ALFED_SEQUENCE.length-1);
+    return ALFED_SEQUENCE[idx].slice();
+  }
+
+  function startTurn(){
+    held = [false,false,false,false,false,false];
+    rollsUsedThisTurn = 0;
+    hasRolledThisTurn = false;
+  }
+
+  function renderDice(){
+    diceTray.innerHTML = '';
+    dice.forEach((val, i)=>{
+      const die = document.createElement('div');
+      die.className = 'die' + (hasRolledThisTurn ? '' : ' unrolled') + (held[i] ? ' held' : '');
+      die.dataset.idx = i;
+      if(hasRolledThisTurn){
+        FACE_PIPS[val].forEach(cls=>{
+          const pip = document.createElement('div');
+          pip.className = 'pip ' + cls;
+          die.appendChild(pip);
+        });
+      }
+      die.addEventListener('click', ()=>{
+        if(!hasRolledThisTurn) return;
+        held[i] = !held[i];
+        renderDice();
+      });
+      diceTray.appendChild(die);
+    });
+  }
+
+  function renderTurnBar(){
+    currentPlayerNameEl.textContent = players[currentPlayerIndex].name;
+    const bank = players[currentPlayerIndex].bank;
+    const extraUsed = Math.max(0, rollsUsedThisTurn - 3);
+    const pluppLeft = Math.max(0, bank - extraUsed);
+    currentPlayerPluppar.innerHTML = '';
+    for(let i=0;i<pluppLeft;i++){
+      const d = document.createElement('div');
+      d.className = 'plupp';
+      currentPlayerPluppar.appendChild(d);
+    }
+    rollsUsedEl.textContent = rollsUsedThisTurn;
+    rollsMaxEl.textContent = maxRollsThisTurn();
+    rollBtn.disabled = rollsUsedThisTurn >= maxRollsThisTurn();
+    scoreHint.textContent = hasRolledThisTurn
+      ? 'Klicka på en tärning för att hålla/släppa den. Klicka på en rad i protokollet för att skriva poäng.'
+      : 'Kasta minst en gång, håll sedan tärningar genom att klicka på dem.';
+  }
+
+  rollBtn.addEventListener('click', ()=>{
+    if(rollsUsedThisTurn >= maxRollsThisTurn()) return;
+    const indicesToRoll = [];
+    dice.forEach((v,i)=>{ if(!held[i]) indicesToRoll.push(i); });
+    const currentPlayer = players[currentPlayerIndex];
+    const forced = isAlfed(currentPlayer) ? alfedForcedDice(currentPlayer) : null;
+
+    // quick shuffle animation
+    let shuffles = 0;
+    const shuffleInterval = setInterval(()=>{
+      indicesToRoll.forEach(i=>{ dice[i] = 1 + Math.floor(Math.random()*6); });
+      hasRolledThisTurn = true;
+      renderDice();
+      indicesToRoll.forEach(i=>{
+        const el = diceTray.children[i];
+        if(el) el.classList.add('rolling');
+      });
+      shuffles++;
+      if(shuffles>=4){
+        clearInterval(shuffleInterval);
+        if(forced){
+          dice = forced;
+        } else {
+          indicesToRoll.forEach(i=>{ dice[i] = 1 + Math.floor(Math.random()*6); });
+        }
+        rollsUsedThisTurn++;
+        renderGame();
+      }
+    }, 90);
+  });
+
+  function sumFilled(scores, ids){
+    return ids.reduce((sum, id)=> sum + (scores[id] || 0), 0);
+  }
+
+  function renderScoresheet(){
+    const table = document.getElementById('scoresheet');
+    let html = '<thead><tr><th class="label">Kombination</th>';
+    players.forEach((p, i)=>{
+      html += `<th>${escapeHtml(p.name)}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    html += `<tr class="section-head"><td colspan="${players.length+1}">ÖVRE SEKTIONEN</td></tr>`;
+    UPPER_IDS.forEach(id=>{
+      html += rowHtml(id);
+    });
+
+    html += '<tr class="bonus-row"><td class="label">Bonus (om ≥84)</td>';
+    players.forEach(p=>{
+      const allUpperFilled = UPPER_IDS.every(id=>p.scores[id]!==null);
+      const sum = sumFilled(p.scores, UPPER_IDS);
+      if(allUpperFilled){
+        const bonus = sum>=84 ? 100 : 0;
+        html += `<td class="score-cell filled ${bonus===0?'zero':''}">${bonus}</td>`;
+      } else {
+        const filledUpperIds = UPPER_IDS.filter(id=>p.scores[id]!==null);
+        const targetSoFar = filledUpperIds.reduce((s,id)=> s+upperBonusTarget(id), 0);
+        html += `<td class="score-cell">${bonusBadge(sum, targetSoFar)}</td>`;
+      }
+    });
+    html += '</tr>';
+
+    html += `<tr class="section-head"><td colspan="${players.length+1}">NEDRE SEKTIONEN</td></tr>`;
+    LOWER_IDS.forEach(id=>{
+      html += rowHtml(id);
+    });
+
+    html += '<tr class="total-row"><td class="label">TOTALT</td>';
+    players.forEach(p=>{
+      html += `<td>${totalForPlayer(p)}</td>`;
+    });
+    html += '</tr>';
+
+    html += '</tbody>';
+    table.innerHTML = html;
+
+    // attach click handlers for clickable cells
+    table.querySelectorAll('td.score-cell.clickable').forEach(td=>{
+      td.addEventListener('click', ()=>{
+        const catId = td.dataset.cat;
+        commitScore(catId);
+      });
+    });
+  }
+
+  function rowHtml(id){
+    const cat = CATEGORIES.find(c=>c.id===id);
+    const isUpper = cat.section === 'upper';
+    let html = `<tr><td class="label">${cat.label}</td>`;
+    players.forEach((p, pIdx)=>{
+      const val = p.scores[id];
+      if(val !== null){
+        const badge = isUpper ? bonusBadge(val, upperBonusTarget(id)) : '';
+        html += `<td class="score-cell filled ${val===0?'zero':''}">${val}${badge}</td>`;
+      } else if(pIdx === currentPlayerIndex && hasRolledThisTurn){
+        const preview = computeScore(id, dice);
+        const badge = isUpper ? bonusBadge(preview, upperBonusTarget(id)) : '';
+        html += `<td class="score-cell clickable" data-cat="${id}">${preview}${badge}</td>`;
+      } else {
+        html += '<td class="score-cell">–</td>';
+      }
+    });
+    html += '</tr>';
+    return html;
+  }
+
+  function bonusBadge(value, target){
+    const diff = value - target;
+    const text = diff>=0 ? `+${diff}` : `${diff}`;
+    const cls = diff>=0 ? 'bonus-ontrack' : 'bonus-behind';
+    return `<span class="row-badge ${cls}">${text}</span>`;
+  }
+
+  function totalForPlayer(p){
+    const upperSum = sumFilled(p.scores, UPPER_IDS);
+    const allUpperFilled = UPPER_IDS.every(id=>p.scores[id]!==null);
+    const bonus = (allUpperFilled && upperSum>=84) ? 100 : 0;
+    const lowerSum = sumFilled(p.scores, LOWER_IDS);
+    return upperSum + bonus + lowerSum;
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function commitScore(catId){
+    const player = players[currentPlayerIndex];
+    if(player.scores[catId] !== null) return;
+    if(!hasRolledThisTurn) return;
+    const value = computeScore(catId, dice);
+    if(value === 0){
+      const cat = CATEGORIES.find(c=>c.id===catId);
+      const sure = confirm(`Är du säker på att du vill ta 0 poäng på "${cat.label}"?`);
+      if(!sure) return;
+    }
+    player.scores[catId] = value;
+    const unused = maxRollsThisTurn() - rollsUsedThisTurn;
+    player.bank = unused;
+    nextTurn();
+  }
+
+  function playerDone(p){
+    return CATEGORIES.every(c=>p.scores[c.id]!==null);
+  }
+
+  function nextTurn(){
+    if(players.every(playerDone)){
+      renderGame();
+      endGame();
+      return;
+    }
+    let tries = 0;
+    do{
+      currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+      tries++;
+    } while(playerDone(players[currentPlayerIndex]) && tries <= players.length);
+    startTurn();
+    renderGame();
+  }
+
+  function renderGame(){
+    renderTurnBar();
+    renderDice();
+    renderScoresheet();
+  }
+
+  /* ========================= END SCREEN / HIGHSCORE (Supabase) ========================= */
+
+  async function fetchHighscores(limit){
+    const { data, error } = await supabaseClient
+      .from('highscores')
+      .select('*')
+      .order('score', { ascending:false })
+      .limit(limit);
+    if(error){
+      console.error('Kunde inte hämta highscore:', error);
+      return [];
+    }
+    return data;
+  }
+
+  async function insertHighscores(entries){
+    const { error } = await supabaseClient.from('highscores').insert(entries);
+    if(error) console.error('Kunde inte spara highscore:', error);
+  }
+
+  async function deleteHighscoreEntry(id){
+    const { error } = await supabaseClient.from('highscores').delete().eq('id', id);
+    if(error) console.error('Kunde inte ta bort resultat:', error);
+    await renderHighscore();
+  }
+
+  async function clearAllHighscores(){
+    const { error } = await supabaseClient.from('highscores').delete().gte('score', 0);
+    if(error) console.error('Kunde inte rensa highscore:', error);
+    await renderHighscore();
+  }
+
+  async function endGame(){
+    document.getElementById('game-screen').classList.add('hidden');
+    document.getElementById('end-screen').classList.remove('hidden');
+
+    const results = players.map(p=>({name:p.name, score:totalForPlayer(p)}))
+                            .sort((a,b)=>b.score-a.score);
+
+    const standingsEl = document.getElementById('standings-list');
+    standingsEl.innerHTML = '';
+    results.forEach((r, i)=>{
+      const li = document.createElement('li');
+      if(i===0) li.className='first';
+      li.innerHTML = `<span class="rank">${i===0?'👑':'#'+(i+1)}</span> ${escapeHtml(r.name)}<span class="pts">${r.score} p</span>`;
+      standingsEl.appendChild(li);
+    });
+
+    const date = new Date().toLocaleDateString('sv-SE');
+    const entries = results.map(r=>({name:r.name, score:r.score, date}));
+    await insertHighscores(entries);
+    await renderHighscore();
+  }
+
+  async function renderHighscore(){
+    const hs = await fetchHighscores(10);
+    document.querySelectorAll('.highscore-list').forEach(el=>{
+      el.innerHTML = '';
+      if(hs.length===0){
+        el.innerHTML = '<li>Inga resultat sparade ännu.</li>';
+        return;
+      }
+      hs.forEach((entry,i)=>{
+        const li = document.createElement('li');
+        const deleteBtn = isAdmin
+          ? `<button class="hs-delete" type="button" data-id="${entry.id}" title="Ta bort resultat">&times;</button>`
+          : '';
+        li.innerHTML = `<span class="hs-name">${i+1}. ${escapeHtml(entry.name)}</span><span class="hs-meta">${entry.score} p &middot; ${entry.date}</span>${deleteBtn}`;
+        el.appendChild(li);
+      });
+    });
+    document.querySelectorAll('.hs-delete').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        if(confirm('Ta bort det här resultatet från highscore-listan?')){
+          deleteHighscoreEntry(id);
+        }
+      });
+    });
+  }
+
+  document.getElementById('new-game-btn').addEventListener('click', ()=>{
+    setupNames = players.map(p=>p.name);
+    renderSetup();
+    document.getElementById('end-screen').classList.add('hidden');
+    document.getElementById('setup-screen').classList.remove('hidden');
+  });
+
+  document.getElementById('clear-highscore-btn').addEventListener('click', ()=>{
+    if(confirm('Rensa hela highscore-listan för ALLA spelare? Detta går inte att ångra.')){
+      clearAllHighscores();
+    }
+  });
+
+  /* ========================= ADMIN-INLOGGNING ========================= */
+  let isAdmin = false;
+  const adminLoginToggle = document.getElementById('admin-login-toggle');
+  const adminLoginForm = document.getElementById('admin-login-form');
+  const adminLoginBtn = document.getElementById('admin-login-btn');
+  const adminLoginError = document.getElementById('admin-login-error');
+  const adminStatus = document.getElementById('admin-status');
+  const adminLogoutBtn = document.getElementById('admin-logout-btn');
+  const clearHighscoreBtn = document.getElementById('clear-highscore-btn');
+
+  function updateAdminUI(){
+    adminLoginToggle.classList.toggle('hidden', isAdmin);
+    adminLoginForm.classList.add('hidden');
+    adminStatus.classList.toggle('hidden', !isAdmin);
+    clearHighscoreBtn.classList.toggle('hidden', !isAdmin);
+  }
+
+  adminLoginToggle.addEventListener('click', ()=>{
+    adminLoginForm.classList.toggle('hidden');
+  });
+
+  adminLoginBtn.addEventListener('click', async ()=>{
+    const email = document.getElementById('admin-email').value.trim();
+    const password = document.getElementById('admin-password').value;
+    adminLoginError.textContent = '';
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if(error){
+      adminLoginError.textContent = 'Fel e-post eller lösenord.';
+      return;
+    }
+    isAdmin = true;
+    updateAdminUI();
+    renderHighscore();
+  });
+
+  adminLogoutBtn.addEventListener('click', async ()=>{
+    await supabaseClient.auth.signOut();
+    isAdmin = false;
+    updateAdminUI();
+    renderHighscore();
+  });
+
+  async function checkAdminSession(){
+    const { data } = await supabaseClient.auth.getSession();
+    isAdmin = !!data.session;
+    updateAdminUI();
+  }
+
+  // Live-uppdatering: alla som har sidan öppen ser ändringar direkt
+  supabaseClient
+    .channel('highscores-changes')
+    .on('postgres_changes', { event:'*', schema:'public', table:'highscores' }, ()=>{
+      renderHighscore();
+    })
+    .subscribe();
+
+  checkAdminSession().then(renderHighscore);
+
+  /* ========================= ONLINE-LÄGE ========================= */
+  let onlineGameId = null;
+  let onlineRoomCode = null;
+  let onlineMyIndex = null;
+  let onlineState = null;
+  let onlineChannel = null;
+
+  const onlineScreens = ['setup-screen','online-landing','online-lobby','online-game-screen','online-end-screen'];
+  function showOnlineScreen(id){
+    document.getElementById('game-screen').classList.add('hidden');
+    document.getElementById('end-screen').classList.add('hidden');
+    onlineScreens.forEach(s=>{
+      document.getElementById(s).classList.toggle('hidden', s!==id);
+    });
+  }
+
+  function newRoomCode(){
+    const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code='';
+    for(let i=0;i<4;i++) code+=chars[Math.floor(Math.random()*chars.length)];
+    return code;
+  }
+
+  function emptyPlayer(name){
+    return { name, scores: Object.fromEntries(CATEGORIES.map(c=>[c.id,null])), bank:0 };
+  }
+
+  function emptyOnlineState(){
+    return {
+      players: [],
+      currentPlayerIndex: 0,
+      dice: [1,1,1,1,1,1],
+      held: [false,false,false,false,false,false],
+      rollsUsedThisTurn: 0,
+      hasRolledThisTurn: false,
+      gameStarted: false,
+      gameOver: false,
+    };
+  }
+
+  document.getElementById('go-online-btn').addEventListener('click', ()=>{
+    showOnlineScreen('online-landing');
+  });
+  document.getElementById('on-back-btn').addEventListener('click', ()=>{
+    showOnlineScreen('setup-screen');
+  });
+
+  function onlineErr(msg){
+    document.getElementById('online-error').textContent = msg || '';
+  }
+
+  document.getElementById('on-create-btn').addEventListener('click', async ()=>{
+    const name = document.getElementById('on-create-name').value.trim();
+    if(!name){ onlineErr('Skriv ditt namn först.'); return; }
+    onlineErr('');
+    const code = newRoomCode();
+    const state = emptyOnlineState();
+    state.players.push(emptyPlayer(name));
+    const { data, error } = await supabaseClient.from('games').insert({room_code: code, state}).select().single();
+    if(error){ onlineErr('Kunde inte skapa rum: ' + error.message); return; }
+    onlineGameId = data.id;
+    onlineRoomCode = data.room_code;
+    onlineMyIndex = 0;
+    onlineState = data.state;
+    localStorage.setItem('maxiYatzyOnline', JSON.stringify({gameId:onlineGameId, myIndex:0}));
+    subscribeToRoom();
+    renderOnlineApp();
+  });
+
+  document.getElementById('on-join-btn').addEventListener('click', async ()=>{
+    const code = document.getElementById('on-join-code').value.trim().toUpperCase();
+    const name = document.getElementById('on-join-name').value.trim();
+    if(!code || !name){ onlineErr('Fyll i både rumskod och namn.'); return; }
+    onlineErr('');
+    const { data, error } = await supabaseClient.from('games').select('*').eq('room_code', code).single();
+    if(error || !data){ onlineErr('Hittade inget rum med den koden.'); return; }
+    if(data.state.gameStarted){ onlineErr('Det spelet har redan startat.'); return; }
+    const state = data.state;
+    state.players.push(emptyPlayer(name));
+    const myIndex = state.players.length - 1;
+    const { error: updErr } = await supabaseClient.from('games').update({state, updated_at:new Date().toISOString()}).eq('id', data.id);
+    if(updErr){ onlineErr('Kunde inte gå med: ' + updErr.message); return; }
+    onlineGameId = data.id;
+    onlineRoomCode = data.room_code;
+    onlineMyIndex = myIndex;
+    onlineState = state;
+    localStorage.setItem('maxiYatzyOnline', JSON.stringify({gameId:onlineGameId, myIndex}));
+    subscribeToRoom();
+    renderOnlineApp();
+  });
+
+  function subscribeToRoom(){
+    if(onlineChannel) supabaseClient.removeChannel(onlineChannel);
+    onlineChannel = supabaseClient
+      .channel('game-' + onlineGameId)
+      .on('postgres_changes', { event:'UPDATE', schema:'public', table:'games', filter:`id=eq.${onlineGameId}` }, payload=>{
+        onlineState = payload.new.state;
+        renderOnlineApp();
+      })
+      .subscribe();
+  }
+
+  async function pushOnlineState(){
+    if(!onlineGameId) return;
+    await supabaseClient.from('games').update({ state: onlineState, updated_at:new Date().toISOString() }).eq('id', onlineGameId);
+  }
+
+  function leaveOnline(){
+    if(onlineChannel){ supabaseClient.removeChannel(onlineChannel); onlineChannel=null; }
+    onlineGameId=null; onlineRoomCode=null; onlineMyIndex=null; onlineState=null;
+    localStorage.removeItem('maxiYatzyOnline');
+    showOnlineScreen('setup-screen');
+  }
+  document.getElementById('on-leave-btn').addEventListener('click', leaveOnline);
+  document.getElementById('on-leave-end-btn').addEventListener('click', leaveOnline);
+  document.getElementById('on-leave-game-btn').addEventListener('click', ()=>{
+    if(confirm('Lämna rummet? Du kan inte gå tillbaka in i samma spel efteråt.')){
+      leaveOnline();
+    }
+  });
+
+  function renderOnlineApp(){
+    if(!onlineState) return;
+    if(onlineState.gameOver){
+      showOnlineScreen('online-end-screen');
+      renderOnlineEnd();
+    } else if(onlineState.gameStarted){
+      showOnlineScreen('online-game-screen');
+      renderOnlineGame();
+    } else {
+      showOnlineScreen('online-lobby');
+      renderOnlineLobby();
+    }
+  }
+
+  function renderOnlineLobby(){
+    document.getElementById('on-room-code').textContent = onlineRoomCode;
+    const list = document.getElementById('on-lobby-players');
+    list.innerHTML = '';
+    onlineState.players.forEach((p,i)=>{
+      const li = document.createElement('li');
+      li.innerHTML = escapeHtml(p.name) + (i===0 ? '<span class="host-tag">RUMÄGARE</span>' : '') + (i===onlineMyIndex ? ' (du)' : '');
+      list.appendChild(li);
+    });
+    const isHost = onlineMyIndex === 0;
+    const enoughPlayers = onlineState.players.length >= 2;
+    const startBtn = document.getElementById('on-start-online-btn');
+    startBtn.classList.toggle('hidden', !isHost);
+    startBtn.disabled = !enoughPlayers;
+    startBtn.textContent = enoughPlayers ? 'Starta spel' : 'Väntar på fler spelare…';
+    document.getElementById('on-lobby-waiting').classList.toggle('hidden', isHost);
+  }
+
+  document.getElementById('on-start-online-btn').addEventListener('click', async ()=>{
+    if(onlineState.players.length < 2) return;
+    onlineState.gameStarted = true;
+    await pushOnlineState();
+    renderOnlineApp();
+  });
+
+  function onlineIsMyTurn(){
+    return onlineState && onlineMyIndex === onlineState.currentPlayerIndex;
+  }
+  function onlineMaxRolls(){
+    return 3 + onlineState.players[onlineState.currentPlayerIndex].bank;
+  }
+
+  function renderOnlineGame(){
+    const activePlayer = onlineState.players[onlineState.currentPlayerIndex];
+    document.getElementById('on-current-player-name').textContent = activePlayer.name;
+    const pluppar = document.getElementById('on-current-player-pluppar');
+    pluppar.innerHTML = '';
+    const extraUsed = Math.max(0, onlineState.rollsUsedThisTurn - 3);
+    const pluppLeft = Math.max(0, activePlayer.bank - extraUsed);
+    for(let i=0;i<pluppLeft;i++){
+      const d = document.createElement('div'); d.className='plupp'; pluppar.appendChild(d);
+    }
+    document.getElementById('on-rolls-used').textContent = onlineState.rollsUsedThisTurn;
+    document.getElementById('on-rolls-max').textContent = onlineMaxRolls();
+
+    const myTurn = onlineIsMyTurn();
+    const statusEl = document.getElementById('on-turn-status');
+    statusEl.textContent = myTurn ? 'Din tur!' : `Väntar på ${activePlayer.name}…`;
+
+    const rollBtnOn = document.getElementById('on-roll-btn');
+    rollBtnOn.disabled = !myTurn || onlineState.rollsUsedThisTurn >= onlineMaxRolls();
+    document.getElementById('on-score-hint').textContent = myTurn
+      ? (onlineState.hasRolledThisTurn
+          ? 'Klicka på en tärning för att hålla/släppa. Klicka i protokollet för att skriva poäng.'
+          : 'Kasta minst en gång, håll sedan tärningar genom att klicka på dem.')
+      : 'Vänta på att det blir din tur.';
+
+    // tärningar
+    const tray = document.getElementById('on-dice-tray');
+    tray.innerHTML = '';
+    onlineState.dice.forEach((val,i)=>{
+      const die = document.createElement('div');
+      die.className = 'die' + (onlineState.hasRolledThisTurn ? '' : ' unrolled') + (onlineState.held[i] ? ' held' : '');
+      if(onlineState.hasRolledThisTurn){
+        FACE_PIPS[val].forEach(cls=>{
+          const pip = document.createElement('div'); pip.className='pip '+cls; die.appendChild(pip);
+        });
+      }
+      die.addEventListener('click', ()=>{
+        if(!myTurn || !onlineState.hasRolledThisTurn) return;
+        onlineState.held[i] = !onlineState.held[i];
+        renderOnlineGame();
+        pushOnlineState();
+      });
+      tray.appendChild(die);
+    });
+
+    // protokoll
+    const table = document.getElementById('on-scoresheet');
+    let html = '<thead><tr><th class="label">Kombination</th>';
+    onlineState.players.forEach(p=> html += `<th>${escapeHtml(p.name)}</th>`);
+    html += '</tr></thead><tbody>';
+    html += `<tr class="section-head"><td colspan="${onlineState.players.length+1}">ÖVRE SEKTIONEN</td></tr>`;
+    UPPER_IDS.forEach(id=> html += onlineRowHtml(id, myTurn));
+    html += '<tr class="bonus-row"><td class="label">Bonus (om ≥84)</td>';
+    onlineState.players.forEach(p=>{
+      const allUpperFilled = UPPER_IDS.every(id=>p.scores[id]!==null);
+      const sum = sumFilled(p.scores, UPPER_IDS);
+      if(allUpperFilled){
+        const bonus = sum>=84 ? 100 : 0;
+        html += `<td class="score-cell filled ${bonus===0?'zero':''}">${bonus}</td>`;
+      } else {
+        const filledUpperIds = UPPER_IDS.filter(id=>p.scores[id]!==null);
+        const targetSoFar = filledUpperIds.reduce((s,id)=> s+upperBonusTarget(id), 0);
+        html += `<td class="score-cell">${bonusBadge(sum, targetSoFar)}</td>`;
+      }
+    });
+    html += '</tr>';
+    html += `<tr class="section-head"><td colspan="${onlineState.players.length+1}">NEDRE SEKTIONEN</td></tr>`;
+    LOWER_IDS.forEach(id=> html += onlineRowHtml(id, myTurn));
+    html += '<tr class="total-row"><td class="label">TOTALT</td>';
+    onlineState.players.forEach(p=> html += `<td>${totalForPlayer(p)}</td>`);
+    html += '</tr></tbody>';
+    table.innerHTML = html;
+
+    table.querySelectorAll('td.score-cell.clickable').forEach(td=>{
+      td.addEventListener('click', ()=> onlineCommitScore(td.dataset.cat));
+    });
+  }
+
+  function onlineRowHtml(id, myTurn){
+    const cat = CATEGORIES.find(c=>c.id===id);
+    const isUpper = cat.section === 'upper';
+    let html = `<tr><td class="label">${cat.label}</td>`;
+    onlineState.players.forEach((p, pIdx)=>{
+      const val = p.scores[id];
+      if(val !== null){
+        const badge = isUpper ? bonusBadge(val, upperBonusTarget(id)) : '';
+        html += `<td class="score-cell filled ${val===0?'zero':''}">${val}${badge}</td>`;
+      } else if(pIdx === onlineState.currentPlayerIndex && myTurn && onlineState.hasRolledThisTurn){
+        const preview = computeScore(id, onlineState.dice);
+        const badge = isUpper ? bonusBadge(preview, upperBonusTarget(id)) : '';
+        html += `<td class="score-cell clickable" data-cat="${id}">${preview}${badge}</td>`;
+      } else {
+        html += '<td class="score-cell">–</td>';
+      }
+    });
+    html += '</tr>';
+    return html;
+  }
+
+  document.getElementById('on-roll-btn').addEventListener('click', ()=>{
+    if(!onlineIsMyTurn()) return;
+    if(onlineState.rollsUsedThisTurn >= onlineMaxRolls()) return;
+    const indices = onlineState.dice.map((v,i)=>i).filter(i=>!onlineState.held[i]);
+
+    let shuffles = 0;
+    const shuffleInterval = setInterval(()=>{
+      indices.forEach(i=>{ onlineState.dice[i] = 1 + Math.floor(Math.random()*6); });
+      onlineState.hasRolledThisTurn = true;
+      renderOnlineGame();
+      indices.forEach(i=>{
+        const el = document.getElementById('on-dice-tray').children[i];
+        if(el) el.classList.add('rolling');
+      });
+      shuffles++;
+      if(shuffles>=4){
+        clearInterval(shuffleInterval);
+        indices.forEach(i=>{ onlineState.dice[i] = 1 + Math.floor(Math.random()*6); });
+        onlineState.rollsUsedThisTurn++;
+        renderOnlineGame();
+        pushOnlineState();
+      }
+    }, 90);
+  });
+
+  async function onlineCommitScore(catId){
+    if(!onlineIsMyTurn()) return;
+    const player = onlineState.players[onlineState.currentPlayerIndex];
+    if(player.scores[catId] !== null) return;
+    if(!onlineState.hasRolledThisTurn) return;
+    const value = computeScore(catId, onlineState.dice);
+    if(value === 0){
+      const cat = CATEGORIES.find(c=>c.id===catId);
+      if(!confirm(`Är du säker på att du vill ta 0 poäng på "${cat.label}"?`)) return;
+    }
+    const maxRolls = onlineMaxRolls();
+    player.scores[catId] = value;
+    player.bank = maxRolls - onlineState.rollsUsedThisTurn;
+
+    const allDone = onlineState.players.every(p=> CATEGORIES.every(c=>p.scores[c.id]!==null));
+    if(allDone){
+      onlineState.gameOver = true;
+      await pushOnlineState();
+      renderOnlineApp();
+      const results = onlineState.players.map(p=>({name:p.name, score:totalForPlayer(p)})).sort((a,b)=>b.score-a.score);
+      const date = new Date().toLocaleDateString('sv-SE');
+      await insertHighscores(results.map(r=>({name:r.name, score:r.score, date})));
+      await renderHighscore();
+      return;
+    }
+
+    let tries=0;
+    do{
+      onlineState.currentPlayerIndex = (onlineState.currentPlayerIndex+1) % onlineState.players.length;
+      tries++;
+    } while(CATEGORIES.every(c=>onlineState.players[onlineState.currentPlayerIndex].scores[c.id]!==null) && tries<=onlineState.players.length);
+    onlineState.held = [false,false,false,false,false,false];
+    onlineState.rollsUsedThisTurn = 0;
+    onlineState.hasRolledThisTurn = false;
+
+    renderOnlineGame();
+    await pushOnlineState();
+  }
+
+  function renderOnlineEnd(){
+    const results = onlineState.players.map(p=>({name:p.name, score:totalForPlayer(p)})).sort((a,b)=>b.score-a.score);
+    const list = document.getElementById('on-standings-list');
+    list.innerHTML = '';
+    results.forEach((r,i)=>{
+      const li = document.createElement('li');
+      if(i===0) li.className='first';
+      li.innerHTML = `<span class="rank">${i===0?'👑':'#'+(i+1)}</span> ${escapeHtml(r.name)}<span class="pts">${r.score} p</span>`;
+      list.appendChild(li);
+    });
+  }
+
+  // Återanslut om sidan laddas om mitt i ett online-spel
+  (async function resumeOnline(){
+    const saved = localStorage.getItem('maxiYatzyOnline');
+    if(!saved) return;
+    try{
+      const { gameId, myIndex } = JSON.parse(saved);
+      const { data, error } = await supabaseClient.from('games').select('*').eq('id', gameId).single();
+      if(error || !data) { localStorage.removeItem('maxiYatzyOnline'); return; }
+      onlineGameId = data.id;
+      onlineRoomCode = data.room_code;
+      onlineMyIndex = myIndex;
+      onlineState = data.state;
+      subscribeToRoom();
+      renderOnlineApp();
+    }catch(e){ localStorage.removeItem('maxiYatzyOnline'); }
+  })();
+})();
+</script>
+</body>
+</html>
