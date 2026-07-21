@@ -433,6 +433,31 @@
     100%{ transform:translate(-50%,-320px) scale(.9); opacity:0; }
   }
 
+  .praise-toast{
+    position:fixed;
+    top:18%;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:10001;
+    background:linear-gradient(180deg,var(--gold-soft),var(--gold-deep));
+    color:#2b2118;
+    font-family:'Fraunces',serif;
+    font-weight:700;
+    font-size:17px;
+    padding:12px 22px;
+    border-radius:30px;
+    box-shadow:0 10px 24px rgba(0,0,0,.45);
+    pointer-events:none;
+    animation: praisePop 1.8s ease-out forwards;
+  }
+  @keyframes praisePop{
+    0%{ opacity:0; transform:translateX(-50%) scale(.7) translateY(8px); }
+    15%{ opacity:1; transform:translateX(-50%) scale(1.05) translateY(0); }
+    25%{ transform:translateX(-50%) scale(1) translateY(0); }
+    80%{ opacity:1; }
+    100%{ opacity:0; transform:translateX(-50%) scale(.95) translateY(-10px); }
+  }
+
   /* ---------- Game screen ---------- */
   #game-screen{display:flex; flex-direction:column; gap:16px;}
 
@@ -937,6 +962,7 @@
       cat_house:'Kåk (3+2)', cat_house2:'Hus (3+3)', cat_tower:'Torn (2+4)',
       cat_smallStraight:'Liten stege', cat_largeStraight:'Stor stege', cat_fullStraight:'Full stege',
       cat_chance:'Chans', cat_yatzy:'Yatzy',
+      praise_1:'Bra jobbat! 🎉', praise_2:'Vilket kast! 🔥', praise_3:'Du är grym på det här! 💪', praise_4:'Snyggt drag! 👏',
     },
     en: {
       app_title: 'Maxi Yatzy',
@@ -1010,6 +1036,7 @@
       cat_house:'Full House (3+2)', cat_house2:'House (3+3)', cat_tower:'Tower (2+4)',
       cat_smallStraight:'Small Straight', cat_largeStraight:'Large Straight', cat_fullStraight:'Full Straight',
       cat_chance:'Chance', cat_yatzy:'Yatzy',
+      praise_1:'Well done! 🎉', praise_2:'What a roll! 🔥', praise_3:'You\'re crushing it! 💪', praise_4:'Nice move! 👏',
     },
     da: {
       app_title: 'Maxi Yatzy',
@@ -1083,6 +1110,7 @@
       cat_house:'Hus (3+2)', cat_house2:'Hus (3+3)', cat_tower:'Tårn (2+4)',
       cat_smallStraight:'Lille straight', cat_largeStraight:'Stor straight', cat_fullStraight:'Fuld straight',
       cat_chance:'Chance', cat_yatzy:'Yatzy',
+      praise_1:'Godt klaret! 🎉', praise_2:'Sikke et kast! 🔥', praise_3:'Du er skarp til det her! 💪', praise_4:'Flot træk! 👏',
     },
   };
 
@@ -1131,6 +1159,16 @@
 
   function catLabel(cat){
     return t('cat_' + cat.id);
+  }
+
+  function showPraiseToast(){
+    const n = 1 + Math.floor(Math.random()*4);
+    const msg = t('praise_' + n);
+    const el = document.createElement('div');
+    el.className = 'praise-toast';
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(()=> el.remove(), 1800);
   }
 
   /* ========================= CATEGORIES & SCORING ========================= */
@@ -1544,6 +1582,7 @@
     player.scores[catId] = value;
     const unused = maxRollsThisTurn() - rollsUsedThisTurn;
     player.bank = unused;
+    showPraiseToast();
     nextTurn();
   }
 
@@ -2122,6 +2161,7 @@
     const maxRolls = onlineMaxRolls();
     player.scores[catId] = value;
     player.bank = maxRolls - onlineState.rollsUsedThisTurn;
+    showPraiseToast();
 
     const allDone = onlineState.players.every(p=> CATEGORIES.every(c=>p.scores[c.id]!==null));
     if(allDone){
