@@ -1161,7 +1161,33 @@
     return t('cat_' + cat.id);
   }
 
-  function showPraiseToast(){
+  const MAX_SCORES = {
+    ones:6, twos:12, threes:18, fours:24, fives:30, sixes:36,
+    pair:12, twoPairs:22, threePairs:30, threeKind:18, fourKind:24, fiveKind:30,
+    house:28, house2:33, tower:34,
+    smallStraight:15, largeStraight:20, fullStraight:21,
+    chance:36, yatzy:100,
+  };
+
+  function isImpressiveScore(catId, value){
+    if(value <= 0) return false;
+    if(UPPER_FACE[catId]){
+      // Bättre än brytpunkten (4 av det värdet) för bonusen
+      return value > upperBonusTarget(catId);
+    }
+    if(catId === 'yatzy' || catId === 'fullStraight'){
+      return true; // sällsynt/svårt att få, alltid värt en peppning
+    }
+    if(catId === 'smallStraight' || catId === 'largeStraight'){
+      return false; // vanliga, inget "extra bra" att fira
+    }
+    // Kåk, Hus, Torn, Triss, Fyrtal, Femtal, Par, Två par, Tre par, Chans:
+    // bara vid maxpoäng för den kombinationen
+    return value === MAX_SCORES[catId];
+  }
+
+  function showPraiseToast(catId, value){
+    if(!isImpressiveScore(catId, value)) return;
     const n = 1 + Math.floor(Math.random()*4);
     const msg = t('praise_' + n);
     const el = document.createElement('div');
@@ -1582,7 +1608,7 @@
     player.scores[catId] = value;
     const unused = maxRollsThisTurn() - rollsUsedThisTurn;
     player.bank = unused;
-    showPraiseToast();
+    showPraiseToast(catId, value);
     nextTurn();
   }
 
@@ -2161,7 +2187,7 @@
     const maxRolls = onlineMaxRolls();
     player.scores[catId] = value;
     player.bank = maxRolls - onlineState.rollsUsedThisTurn;
-    showPraiseToast();
+    showPraiseToast(catId, value);
 
     const allDone = onlineState.players.every(p=> CATEGORIES.every(c=>p.scores[c.id]!==null));
     if(allDone){
